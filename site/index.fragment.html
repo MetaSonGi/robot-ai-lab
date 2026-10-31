@@ -1,0 +1,550 @@
+<title>Robot AI Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: teach-pendant workbench — sticky lesson rail on the left, lessons as instrument panels on the right */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f6f8fa; --ink:#15212c; --muted:#5b6875; --line:#d3dae1;
+  --accent:#d9480f; --accent-soft:#fde3d6; --data:#1c6fb8; --ok:#2b8a3e; --bad:#c92a2a;
+  --stage:#0c1117;
+  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141a; --surface:#16202a; --surface-2:#1b2632; --ink:#e4ebf2; --muted:#94a3b1; --line:#2a3744;
+  --accent:#ff7a3d; --accent-soft:#3a2216; --data:#5aa9f0; --ok:#51cf66; --bad:#ff6b6b; --stage:#06090c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141a; --surface:#16202a; --surface-2:#1b2632; --ink:#e4ebf2; --muted:#94a3b1; --line:#2a3744;
+  --accent:#ff7a3d; --accent-soft:#3a2216; --data:#5aa9f0; --ok:#51cf66; --bad:#ff6b6b; --stage:#06090c; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:var(--data)}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{padding-block:40px 28px;border-bottom:1px solid var(--line)}
+.top .tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.top h1{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,7vw,72px);line-height:1.05;margin:.15em 0 .2em;letter-spacing:-.01em;text-wrap:balance}
+.top p{max-width:62ch;color:var(--muted);margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center;margin-top:20px;font-family:var(--f-mono);font-size:13px}
+.flow span{padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.flow i{font-style:normal;color:var(--muted)}
+
+.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.rail a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);padding:7px 10px;border-radius:8px;font-size:14px}
+nav.rail a b{font-family:var(--f-mono);font-weight:500;font-size:12px;color:var(--accent);min-width:1.4em}
+nav.rail a:hover,nav.rail a.on{background:var(--surface);color:var(--ink)}
+
+main{display:flex;flex-direction:column;gap:64px;min-width:0}
+section{scroll-margin-top:24px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.eyebrow b{color:var(--accent);font-weight:500}
+h2{font-size:clamp(24px,3.4vw,32px);line-height:1.25;margin:.25em 0 .5em;text-wrap:balance}
+h3{font-size:17px;margin:1.6em 0 .4em}
+section>p,.prose p{max-width:68ch;margin:.4em 0}
+.formula{font-family:var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;margin:14px 0;overflow-x:auto;white-space:pre;font-size:14px;line-height:1.6}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px;display:grid;gap:18px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.panel-head h3{margin:0;font-size:15px}
+.panel-head .hint{font-size:13px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:24px}
+.controls{display:grid;gap:14px;align-content:start}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;gap:8px}
+.ctl label output{font-family:var(--f-mono);color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.ro{background:var(--surface-2);border-radius:var(--r);padding:10px 12px}
+.ro small{display:block;font-size:12px;color:var(--muted)}
+.ro strong{font-family:var(--f-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.ro.hl strong{color:var(--accent)}
+canvas{display:block;width:100%;max-width:100%;border-radius:var(--r);background:var(--surface-2)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button:disabled{opacity:.55;cursor:default}
+
+.segbar{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.segbar div{display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:11px;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:var(--c);vertical-align:-1px}
+
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr.cur td{background:var(--accent-soft)}
+
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 70px;gap:10px;align-items:center;font-size:14px}
+.bar .track{height:14px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--muted);border-radius:4px;transition:width .4s}
+.bar.best .fill{background:var(--accent)}
+.bar .v{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+
+.qgrid{display:grid;grid-template-columns:110px repeat(4,minmax(0,1fr));gap:4px;font-size:13px}
+.qgrid .h{font-family:var(--f-mono);color:var(--muted);text-align:center;padding:4px 0}
+.qgrid .rl{display:flex;align-items:center;font-size:13px}
+.qgrid .cell{font-family:var(--f-mono);text-align:center;padding:10px 2px;border-radius:6px;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--surface-2);position:relative}
+.qgrid .cell.best{outline:2px solid var(--accent);font-weight:500}
+.qgrid .cell.best::after{content:"★";position:absolute;top:1px;right:5px;font-size:10px;color:var(--accent)}
+
+.pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.pipe .node{flex:1 1 150px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:12px;font-size:14px}
+.pipe .node b{display:block;font-size:12px;font-family:var(--f-mono);color:var(--accent);font-weight:500;margin-bottom:2px}
+.pipe .arr{align-self:center;color:var(--muted);font-family:var(--f-mono)}
+.pipe .node.core{background:var(--accent-soft);border-color:var(--accent)}
+
+.stage{position:relative;background:var(--stage);border-radius:12px;overflow:hidden;aspect-ratio:16/9;max-width:100%;touch-action:none}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;background:transparent;border-radius:0}
+.stage .status{position:absolute;left:12px;bottom:10px;font-family:var(--f-mono);font-size:12px;color:#9fb0bf;pointer-events:none}
+.stage video{display:none}
+
+.tasks{margin:6px 0 0;padding-left:1.3em;display:grid;gap:4px;max-width:68ch}
+.tasks li::marker{color:var(--accent);font-family:var(--f-mono)}
+.task-box{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin-top:18px}
+.task-box h4{margin:0;font-size:13px;font-family:var(--f-mono);letter-spacing:.06em;color:var(--accent);font-weight:500}
+
+.check{display:grid;gap:6px}
+.check label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.check input{margin-top:6px;accent-color:var(--accent)}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.links a{display:block;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.links a small{display:block;color:var(--muted);font-size:12px;font-family:var(--f-mono)}
+.note{font-size:14px;color:var(--muted);max-width:68ch}
+
+@media (max-width:820px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px;padding-top:0}
+  nav.rail{flex-direction:row;overflow-x:auto;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+  nav.rail a{white-space:nowrap;flex:none}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .bar{grid-template-columns:110px minmax(0,1fr) 60px;font-size:13px}
+  .qgrid{grid-template-columns:84px repeat(4,minmax(0,1fr));font-size:12px}
+  header.top{padding-block:28px 20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="tag">AI라운지 성남 · 학습 저장소 robot-ai-lab</div>
+    <h1>Robot AI Lab</h1>
+    <p>로봇이 물건을 옮기는 시간을 관절 속도와 회전각도로 계산하고, 실제 데이터로 AI가 오차를 줄이고, 강화학습으로 가장 좋은 속도를 찾습니다. 웹캠과 빔프로젝터로 만드는 인터랙티브 미디어아트도 같이 실습합니다.</p>
+    <div class="flow" aria-label="전체 흐름">
+      <span>티칭</span><i>→</i><span>궤적 시간 계산</span><i>→</i><span>실제 측정</span><i>→</i><span>AI 보정</span><i>→</i><span>강화학습 최적화</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="rail" aria-label="학습 목차">
+    <a href="#roadmap"><b>0</b>로드맵</a>
+    <a href="#joint-time"><b>1</b>관절 시간 계산</a>
+    <a href="#ai-correction"><b>2</b>AI 오차 보정</a>
+    <a href="#rl"><b>3</b>강화학습</a>
+    <a href="#vla"><b>4</b>VLA</a>
+    <a href="#media-art"><b>5</b>미디어아트</a>
+    <a href="#security"><b>6</b>보안 기초</a>
+    <a href="#get-code"><b>›</b>코드 받기</a>
+  </nav>
+
+  <main>
+    <!-- 0 -->
+    <section id="roadmap">
+      <div class="eyebrow"><b>Lesson 0</b><span>lessons/00-roadmap.md</span></div>
+      <h2>8주 학습 로드맵</h2>
+      <p>각 단계는 저장소의 Python 파일 하나와 연결됩니다. 이 페이지에서 먼저 손으로 만져보고, 같은 내용을 코드로 실행해 보세요.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>주차</th><th>목표</th><th>확인 방법</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1</td><td>Python 기초: 함수, 리스트</td><td><code>simple_time</code> 을 직접 다시 작성</td></tr>
+          <tr><td class="mono">2</td><td>사다리꼴 속도 프로파일</td><td>손 계산과 <code>trapezoid_time</code> 결과 비교</td></tr>
+          <tr><td class="mono">3</td><td>CSV · pandas · 그래프</td><td>속도별 평균 작업시간 그래프 그리기</td></tr>
+          <tr><td class="mono">4</td><td>회귀 모델</td><td>MAE 가 왜 줄어드는지 설명하기</td></tr>
+          <tr><td class="mono">5</td><td>OpenCV 기초</td><td>움직임 추적 단계를 화면에 하나씩 띄우기</td></tr>
+          <tr><td class="mono">6</td><td>호모그래피</td><td>웹캠 ↔ 프로젝터 4점 보정</td></tr>
+          <tr><td class="mono">7</td><td>강화학습</td><td>벌점·탐험률을 바꿔 정책 변화 관찰</td></tr>
+          <tr><td class="mono">8</td><td>통합 발표</td><td>웹 페이지 + 시연 영상으로 포트폴리오</td></tr>
+        </tbody>
+      </table></div>
+      <h3>참고 영상</h3>
+      <div class="links">
+        <a href="https://youtu.be/N3st1ZrB_zc" target="_blank" rel="noopener"><small>AI 기초</small>youtu.be/N3st1ZrB_zc</a>
+        <a href="https://youtu.be/BXAbKHPuM70" target="_blank" rel="noopener"><small>보안(해킹) 1</small>youtu.be/BXAbKHPuM70</a>
+        <a href="https://youtu.be/HX96Uqq7AMg" target="_blank" rel="noopener"><small>보안(해킹) 2</small>youtu.be/HX96Uqq7AMg</a>
+      </div>
+    </section>
+
+    <!-- 1 -->
+    <section id="joint-time">
+      <div class="eyebrow"><b>Lesson 1</b><span>robot_time/trajectory.py</span></div>
+      <h2>관절 속도로 이동 시간 계산하기</h2>
+      <p>관절이 일정한 속도로 돈다고 보면 시간은 각도를 속도로 나눈 값입니다. 실제 모터는 가속하고 감속하기 때문에 속도 그래프가 사다리꼴이 되고, 그만큼 시간이 더 걸립니다.</p>
+      <div class="formula">단순식        T = 각도 / v                      90° / 30°/s = 3.0 s
+사다리꼴      T = 각도 / v + v / a              (각도 ≥ v²/a 일 때)
+삼각형        T = 2 · √(각도 / a)              (최고속도에 못 닿을 때)</div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>관절 1개 속도 프로파일</h3><span class="hint">그래프 아래 넓이 = 이동각도</span></div>
+        <div class="cols">
+          <div class="controls">
+            <div class="ctl"><label for="j-angle">이동각도 <output id="o-angle"></output></label><input id="j-angle" type="range" min="5" max="180" value="90"></div>
+            <div class="ctl"><label for="j-v">최고속도 v <output id="o-v"></output></label><input id="j-v" type="range" min="10" max="180" value="30"></div>
+            <div class="ctl"><label for="j-a">가속도 a <output id="o-a"></output></label><input id="j-a" type="range" min="10" max="360" value="60"></div>
+            <div class="readouts">
+              <div class="ro"><small>단순식</small><strong id="r-simple"></strong></div>
+              <div class="ro hl"><small id="r-shape">사다리꼴</small><strong id="r-trap"></strong></div>
+            </div>
+          </div>
+          <canvas id="cv-profile" height="260" aria-label="속도-시간 그래프"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>물건 옮기기 전체 시간 (6축, 티칭 포즈 7개)</h3><span class="hint">구간 시간 = 6개 관절 중 가장 느린 관절</span></div>
+        <div class="ctl" style="max-width:420px"><label for="t-speed">로봇 속도 설정 <output id="o-speed"></output></label><input id="t-speed" type="range" min="10" max="100" step="10" value="50"></div>
+        <div class="readouts">
+          <div class="ro hl"><small>예상 작업 시간</small><strong id="r-total"></strong></div>
+          <div class="ro"><small>이동 구간 합</small><strong id="r-move"></strong></div>
+          <div class="ro"><small>집기 + 놓기</small><strong>0.90 s</strong></div>
+        </div>
+        <div class="segbar" id="segbar"></div>
+        <div class="legend" id="seglegend"></div>
+        <div class="tbl-wrap"><table id="seg-table">
+          <thead><tr><th>구간</th><th class="num">시간</th><th>가장 느린 관절</th><th class="num">그 관절 이동각</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+      <div class="task-box"><h4>실습 과제</h4>
+        <ol class="tasks">
+          <li>속도를 50%에서 100%로 올려도 시간이 절반이 되지 않습니다. 이유를 두 가지 적어 보세요.</li>
+          <li>가장 오래 걸리는 구간을 찾고, <code>EXAMPLE_TASK</code> 의 그 관절 각도를 바꿔 시간을 줄여 보세요.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="ai-correction">
+      <div class="eyebrow"><b>Lesson 2</b><span>simulate_data.py · train_model.py</span></div>
+      <h2>AI로 예측 오차 줄이기</h2>
+      <p>계산식은 이상적인 로봇을 가정합니다. 실제 로봇은 무거운 물건을 들면 가속이 덜 되고, 빠르게 멈추면 진동이 잦아들 때까지 기다리고, 통신 지연도 있습니다. 측정 데이터를 모아 회귀 모델이 이 차이를 학습하게 합니다. 물리 계산값을 버리지 않고 입력 특징으로 넣는 것이 핵심입니다.</p>
+      <div class="formula">입력:  이론시간, 속도%, 무게, 총 이동각, 구간 수   (+ 특징 공학: 속도², 이론시간×무게×속도)
+출력:  실제 작업 시간</div>
+      <div class="panel">
+        <div class="panel-head"><h3>가상 측정 데이터로 학습</h3><span class="hint">학습 75% · 평가 25%</span></div>
+        <div class="btns">
+          <div class="ctl" style="min-width:220px;flex:1"><label for="ai-n">측정한 작업 수 <output id="o-n"></output></label><input id="ai-n" type="range" min="40" max="1000" step="20" value="600"></div>
+          <button class="primary" id="ai-run">새 데이터로 다시 학습</button>
+        </div>
+        <div class="cols">
+          <div class="bars" id="ai-bars" aria-label="평균 절대 오차 비교"></div>
+          <canvas id="cv-scatter" height="300" aria-label="실제 시간 대비 예측 시간"></canvas>
+        </div>
+        <p class="note">왼쪽: 평균 절대 오차(MAE, 초). 오른쪽: 점이 대각선에 가까울수록 정확합니다. 회색은 이론값, 주황색은 특징 공학 회귀 모델입니다.</p>
+      </div>
+      <div class="task-box"><h4>실습 과제</h4>
+        <ol class="tasks">
+          <li>작업 수를 40개로 줄이면 어떤 모델이 더 흔들리나요?</li>
+          <li><code>train_model.py</code> 에서 <code>add_features</code> 를 빼고 랜덤포레스트와 비교해 보세요.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="rl">
+      <div class="eyebrow"><b>Lesson 3</b><span>robot_time/rl_speed.py</span></div>
+      <h2>강화학습으로 무게별 최적 속도 찾기</h2>
+      <p>빠르면 시간이 줄지만 물건을 떨어뜨릴 수 있습니다. 로봇이 여러 번 시도하면서 보상(빠를수록 좋고, 떨어뜨리면 벌점)을 받아 무게마다 가장 좋은 속도를 스스로 찾습니다.</p>
+      <div class="formula">상태: 무게 구간   행동: 속도 30/50/70/90%   보상: −작업시간 − (떨어뜨리면 벌점)
+Q[상태][행동] ← Q + α · (보상 − Q)        ε 확률로 무작위 탐험</div>
+      <div class="panel">
+        <div class="cols">
+          <div class="controls">
+            <div class="ctl"><label for="rl-pen">떨어뜨림 벌점 <output id="o-pen"></output></label><input id="rl-pen" type="range" min="0" max="30" value="10"></div>
+            <div class="ctl"><label for="rl-eps">탐험률 ε <output id="o-eps"></output></label><input id="rl-eps" type="range" min="0" max="50" value="20"></div>
+            <div class="btns"><button class="primary" id="rl-run">6000회 학습</button></div>
+            <div class="readouts"><div class="ro"><small>학습한 시도</small><strong id="rl-ep">0</strong></div></div>
+          </div>
+          <div style="display:grid;gap:14px;min-width:0">
+            <div class="qgrid" id="qgrid" aria-label="Q 테이블"></div>
+            <canvas id="cv-rl" height="150" aria-label="평균 보상 학습 곡선"></canvas>
+          </div>
+        </div>
+        <p class="note">표의 값은 평균 보상(대략 −초)입니다. ★ 가 학습된 최적 속도입니다. 아래 곡선은 최근 200회 평균 보상이 올라가는 모습입니다.</p>
+      </div>
+      <div class="task-box"><h4>실습 과제</h4>
+        <ol class="tasks">
+          <li>벌점을 0으로 하면 어떤 속도를 고르나요? 30으로 올리면?</li>
+          <li>ε 을 0으로 두면 왜 학습이 잘못될 수 있는지 설명해 보세요.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="vla">
+      <div class="eyebrow"><b>Lesson 4</b><span>lessons/04-vla.md</span></div>
+      <h2>VLA: 보고, 듣고, 움직이는 로봇</h2>
+      <p>VLA(Vision-Language-Action)는 카메라 영상과 "빨간 컵을 상자에 넣어" 같은 문장을 받아 로봇 행동을 만드는 모델입니다. 앞에서 만든 시간 예측과 속도 최적화는 VLA 뒤에 붙는 모듈이 됩니다.</p>
+      <div class="panel">
+        <div class="pipe">
+          <div class="node"><b>입력</b>카메라 영상 + 명령 문장</div><span class="arr">→</span>
+          <div class="node core"><b>VLA</b>무엇을 어디로 옮길지, 관절 목표 생성</div><span class="arr">→</span>
+          <div class="node"><b>Lesson 1·2</b>이 동작이 몇 초 걸릴지 예측</div><span class="arr">→</span>
+          <div class="node"><b>Lesson 3</b>무게에 맞는 속도 선택</div><span class="arr">→</span>
+          <div class="node"><b>출력</b>로봇 실행 + "약 7초 걸립니다"</div>
+        </div>
+      </div>
+      <h3>배우는 순서</h3>
+      <ol class="tasks">
+        <li>모방학습: 티칭한 동작(관찰 → 행동 쌍)을 그대로 따라 하도록 학습</li>
+        <li>이미지 인식: 카메라로 물건 위치 찾기</li>
+        <li>언어 조건: 명령 문장에 따라 다른 행동</li>
+        <li>공개 VLA(OpenVLA, LeRobot 등)를 시뮬레이터에서 실행</li>
+      </ol>
+    </section>
+
+    <!-- 5 -->
+    <section id="media-art">
+      <div class="eyebrow"><b>Lesson 5</b><span>mediaart/calibrate.py · draw_light.py</span></div>
+      <h2>웹캠 + 빔프로젝터 빛 그리기</h2>
+      <p>웹캠으로 움직임을 찾고, 그 위치에 빛의 궤적을 남겨 빔프로젝터로 벽에 투사합니다. 아래 무대에서 마우스나 손가락으로 그려 보세요. GitHub Pages 주소로 열면 웹캠 모드도 동작합니다.</p>
+      <div class="panel">
+        <div class="stage" id="stage">
+          <canvas id="cv-art" aria-label="빛 그리기 무대"></canvas>
+          <video id="cam" playsinline muted></video>
+          <div class="status" id="art-status">마우스 / 터치로 그리기</div>
+        </div>
+        <div class="btns">
+          <button class="primary" id="art-cam">웹캠으로 그리기</button>
+          <button id="art-clear">지우기</button>
+          <div class="ctl" style="min-width:200px;flex:1"><label for="art-fade">잔상 유지 <output id="o-fade"></output></label><input id="art-fade" type="range" min="80" max="99" value="96"></div>
+        </div>
+      </div>
+      <h3>움직임 추적 (OpenCV와 같은 순서)</h3>
+      <div class="formula">컬러 → 흑백 → 블러 → 이전 프레임과 차이 → 이진화 → 흰 픽셀의 무게중심 = 손 위치</div>
+      <h3>좌표 맞추기: 호모그래피</h3>
+      <p>웹캠은 벽을 비스듬히 보기 때문에 카메라 좌표와 프로젝터 좌표가 다릅니다. 벽이 평평하면 3×3 행렬 하나로 바꿀 수 있습니다. <code>calibrate.py</code> 가 프로젝터에 원 4개를 띄우고, 카메라 화면에서 그 원을 클릭하면 행렬을 저장합니다.</p>
+      <div class="formula">H = cv2.getPerspectiveTransform(카메라_4점, 프로젝터_4점)
+프로젝터좌표 = cv2.perspectiveTransform(카메라좌표, H)</div>
+      <p class="note">입체 물체 표면까지 정확히 맞추려면 구조광 같은 3D 복원이 따로 필요합니다. 호모그래피는 평면 전용입니다.</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="security">
+      <div class="eyebrow"><b>Lesson 6</b><span>lessons/06-security-basics.md</span></div>
+      <h2>로봇·카메라 시스템 보안 기초</h2>
+      <p>보안 실습은 내가 소유한 장비와 직접 만든 실습 환경에서만 합니다. 이 프로젝트에서 공격받을 수 있는 곳부터 확인해 보세요.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>위치</th><th>위험</th><th>기본 대책</th></tr></thead>
+        <tbody>
+          <tr><td>로봇 제어 PC ↔ 로봇</td><td>외부 명령으로 로봇이 움직임</td><td>분리된 네트워크, 방화벽, 인증</td></tr>
+          <tr><td>웹캠 스트림</td><td>영상 엿보기</td><td>외부 공개 금지, 기본 비밀번호 변경</td></tr>
+          <tr><td>학습 데이터 CSV</td><td>조작되면 예측이 틀어짐</td><td>접근 권한, 백업, 이상값 검사</td></tr>
+          <tr><td>GitHub 저장소</td><td>비밀번호·키 유출</td><td><code>.gitignore</code>, 키를 코드에 쓰지 않기</td></tr>
+        </tbody>
+      </table></div>
+      <h3>내 시스템 체크리스트</h3>
+      <div class="check" id="sec-check">
+        <label><input type="checkbox" id="c1"> 로봇 제어 네트워크가 인터넷과 분리돼 있다</label>
+        <label><input type="checkbox" id="c2"> 웹캠·로봇 컨트롤러 기본 비밀번호를 바꿨다</label>
+        <label><input type="checkbox" id="c3"> 저장소에 비밀번호·API 키가 없다</label>
+        <label><input type="checkbox" id="c4"> 비상정지 버튼이 소프트웨어와 무관하게 동작한다</label>
+      </div>
+      <p class="note">합법 연습장: TryHackMe, HackTheBox, OverTheWire, Dreamhack</p>
+    </section>
+
+    <!-- code -->
+    <section id="get-code">
+      <div class="eyebrow"><b>Code</b><span>robot-ai-lab</span></div>
+      <h2>코드 받아서 실행하기</h2>
+      <div class="formula">pip install -r requirements.txt
+
+python robot_time/trajectory.py      # Lesson 1
+python robot_time/simulate_data.py   # Lesson 2 데이터
+python robot_time/train_model.py     # Lesson 2 학습
+python robot_time/rl_speed.py        # Lesson 3
+python mediaart/calibrate.py         # Lesson 5 보정
+python mediaart/draw_light.py        # Lesson 5 빛 그리기</div>
+      <div class="formula">robot-ai-lab/
+├── robot_time/   로봇 시간 예측 · AI 보정 · 강화학습
+├── mediaart/     웹캠 미디어아트
+├── lessons/      단계별 학습 문서 (00 ~ 06)
+├── data/         측정 데이터 CSV
+└── docs/         이 웹 페이지 (GitHub Pages)</div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- robot model (same as trajectory.py) ---------- */
+const VMAX=[180,180,180,225,225,225], AMAX=[360,360,360,450,450,450];
+const WP=[[0,-30,60,0,60,0],[35,-10,70,0,30,35],[35,5,80,0,5,35],[35,-10,70,0,30,35],[-60,-15,65,0,40,-60],[-60,0,78,0,12,-60],[0,-30,60,0,60,0]];
+const SEG=["홈 → 물건 위","내려가 집기","들어올림","목표 위로","내려가 놓기","홈 복귀"];
+const GRIP=0.9;
+function trap(d,v,a){d=Math.abs(d);if(!d)return 0;return d>=v*v/a? d/v+v/a : 2*Math.sqrt(d/a);}
+function segInfo(q0,q1,pct){const s=pct/100;let best={t:0,j:0,d:0};for(let i=0;i<6;i++){const t=trap(q1[i]-q0[i],VMAX[i]*s,AMAX[i]*s);if(t>best.t)best={t,j:i,d:Math.abs(q1[i]-q0[i])};}return best;}
+function predict(wps,pct){const segs=[];for(let i=0;i<wps.length-1;i++)segs.push(segInfo(wps[i],wps[i+1],pct));const move=segs.reduce((a,b)=>a+b.t,0);return{segs,move,total:move+GRIP};}
+
+/* ---------- canvas helper ---------- */
+function setup(cv){const dpr=Math.min(window.devicePixelRatio||1,2);const w=cv.clientWidth,h=+cv.getAttribute("height");cv.style.height=h+"px";cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);return{c,w,h};}
+const MONO='12px "IBM Plex Mono", ui-monospace, monospace';
+
+/* ---------- Lesson 1A: profile ---------- */
+function drawProfile(){
+  const d=+$("j-angle").value,v=+$("j-v").value,a=+$("j-a").value;
+  $("o-angle").textContent=d+"°";$("o-v").textContent=v+"°/s";$("o-a").textContent=a+"°/s²";
+  const T=trap(d,v,a),Ts=d/v,tri=d<v*v/a;
+  $("r-simple").textContent=Ts.toFixed(2)+" s";$("r-trap").textContent=T.toFixed(2)+" s";
+  $("r-shape").textContent=tri?"삼각형 (최고속도 못 닿음)":"사다리꼴 (가속·등속·감속)";
+  const {c,w,h}=setup($("cv-profile"));const L=44,R=14,Tp=16,B=34;const pw=w-L-R,ph=h-Tp-B;
+  const tMax=Math.max(T,Ts)*1.08,vMax=v*1.15;const X=t=>L+t/tMax*pw,Y=y=>Tp+ph-y/vMax*ph;
+  c.font=MONO;c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.lineWidth=1;
+  const step=tMax>8?2:tMax>3?1:0.5;
+  for(let t=0;t<=tMax;t+=step){c.beginPath();c.moveTo(X(t),Tp);c.lineTo(X(t),Tp+ph);c.stroke();c.textAlign="center";c.fillText(t.toFixed(step<1?1:0)+"s",X(t),h-12);}
+  c.textAlign="right";[0,v/2,v].forEach(y=>{c.beginPath();c.moveTo(L,Y(y));c.lineTo(L+pw,Y(y));c.stroke();c.fillText(Math.round(y),L-6,Y(y)+4);});
+  // simple (dashed)
+  c.setLineDash([5,4]);c.strokeStyle=css("--muted");c.lineWidth=1.5;c.beginPath();c.moveTo(X(0),Y(0));c.lineTo(X(0),Y(v));c.lineTo(X(Ts),Y(v));c.lineTo(X(Ts),Y(0));c.stroke();c.setLineDash([]);
+  // trapezoid
+  const vp=Math.min(v,Math.sqrt(d*a)),ta=vp/a;
+  c.beginPath();c.moveTo(X(0),Y(0));c.lineTo(X(ta),Y(vp));c.lineTo(X(T-ta),Y(vp));c.lineTo(X(T),Y(0));c.closePath();
+  c.fillStyle=css("--accent-soft");c.fill();c.strokeStyle=css("--accent");c.lineWidth=2.5;c.stroke();
+  c.fillStyle=css("--accent");c.beginPath();c.arc(X(T),Y(0),4,0,7);c.fill();
+  c.textAlign="left";c.fillStyle=css("--muted");c.fillText("°/s",4,Tp+4);
+  c.fillStyle=css("--accent");c.fillText("실제(사다리꼴) "+T.toFixed(2)+"s",L+8,Tp+12);
+  c.fillStyle=css("--muted");c.fillText("- - 단순식 "+Ts.toFixed(2)+"s",L+8,Tp+28);
+}
+["j-angle","j-v","j-a"].forEach(id=>$(id).addEventListener("input",drawProfile));
+
+/* ---------- Lesson 1B: task ---------- */
+const SEGC=["#1c6fb8","#3b8fd6","#6aaee6","#c2410c","#e8590c","#f08c4a"];
+function drawTask(){
+  const pct=+$("t-speed").value;$("o-speed").textContent=pct+"%";
+  const r=predict(WP,pct);$("r-total").textContent=r.total.toFixed(2)+" s";$("r-move").textContent=r.move.toFixed(2)+" s";
+  const bar=$("segbar");bar.innerHTML="";
+  r.segs.forEach((s,i)=>{const d=document.createElement("div");d.style.flex=s.t;d.style.background=SEGC[i];d.textContent=s.t.toFixed(2);d.title=SEG[i];bar.appendChild(d);});
+  const g=document.createElement("div");g.style.flex=GRIP;g.style.background="#7a8794";g.textContent="그리퍼";bar.appendChild(g);
+  $("seglegend").innerHTML=SEG.map((n,i)=>`<span style="--c:${SEGC[i]}">${n}</span>`).join("")+`<span style="--c:#7a8794">집기·놓기</span>`;
+  const slow=r.segs.reduce((m,s,i)=>s.t>r.segs[m].t?i:m,0);
+  $("seg-table").tBodies[0].innerHTML=r.segs.map((s,i)=>`<tr class="${i===slow?"cur":""}"><td>${SEG[i]}</td><td class="num">${s.t.toFixed(2)} s</td><td>관절 ${s.j+1}</td><td class="num">${s.d.toFixed(0)}°</td></tr>`).join("");
+}
+$("t-speed").addEventListener("input",drawTask);
+
+/* ---------- RNG + fake measurement (same as simulate_data.py) ---------- */
+function rng(seed){let a=seed>>>0;const r=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};r.gauss=()=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};return r;}
+function fakeMeasure(theory,pct,kg,n,R){const s=pct/100;const actual=theory*(1+0.12*kg*s)+n*(0.03+0.10*s*s)+n*0.04+R.gauss()*0.05*Math.sqrt(theory);const pDrop=1/(1+Math.exp(-(6*s+1.2*kg-7.5)));return{t:actual,ok:R()>pDrop};}
+function genData(n,seed){const R=rng(seed),rows=[];for(let k=0;k<n;k++){const wps=WP.map(w=>w.map(q=>q+(R()*30-15)));wps[6]=wps[0].slice();const pct=10*(1+Math.floor(R()*10));const kg=R()*3;const p=predict(wps,pct);let ang=0;for(let i=0;i<6;i++)ang+=Math.max(...wps[i].map((q,j)=>Math.abs(wps[i+1][j]-q)));const m=fakeMeasure(p.total,pct,kg,6,R);rows.push({theory:p.total,pct,kg,ang,actual:m.t});}return rows;}
+
+/* ---------- Lesson 2: linear regression via normal equations ---------- */
+function solve(A,b){const n=b.length;const M=A.map((r,i)=>[...r,b[i]]);for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];for(let r=c+1;r<n;r++){const f=M[r][c]/M[c][c];for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k];}}const x=new Array(n).fill(0);for(let r=n-1;r>=0;r--){let s=M[r][n];for(let k=r+1;k<n;k++)s-=M[r][k]*x[k];x[r]=s/M[r][r];}return x;}
+function fitLinear(Xtr,ytr){const d=Xtr[0].length;const mu=new Array(d).fill(0),sd=new Array(d).fill(0);Xtr.forEach(r=>r.forEach((v,j)=>mu[j]+=v/Xtr.length));Xtr.forEach(r=>r.forEach((v,j)=>sd[j]+=(v-mu[j])**2/Xtr.length));sd.forEach((v,j)=>sd[j]=Math.sqrt(v)||1);
+  const Z=r=>[1,...r.map((v,j)=>(v-mu[j])/sd[j])];const D=d+1;const A=Array.from({length:D},()=>new Array(D).fill(0)),b=new Array(D).fill(0);
+  Xtr.forEach((r,i)=>{const z=Z(r);for(let p=0;p<D;p++){b[p]+=z[p]*ytr[i];for(let q=0;q<D;q++)A[p][q]+=z[p]*z[q];}});for(let p=1;p<D;p++)A[p][p]+=1e-6;
+  const w=solve(A,b);return r=>Z(r).reduce((s,v,i)=>s+v*w[i],0);}
+const basic=r=>[r.theory,r.pct,r.kg,r.ang];
+const eng=r=>[r.theory,r.pct,r.kg,r.ang,r.theory*r.kg*r.pct/100,(r.pct/100)**2];
+const mae=(p,y)=>p.reduce((s,v,i)=>s+Math.abs(v-y[i]),0)/p.length;
+let aiSeed=7,aiLast=null;
+function runAI(){
+  const n=+$("ai-n").value;$("o-n").textContent=n+"개";
+  const rows=genData(n,aiSeed);const cut=Math.floor(n*0.75);const tr=rows.slice(0,cut),te=rows.slice(cut);const yte=te.map(r=>r.actual);
+  const m1=fitLinear(tr.map(basic),tr.map(r=>r.actual)),m2=fitLinear(tr.map(eng),tr.map(r=>r.actual));
+  const pTheory=te.map(r=>r.theory),p1=te.map(r=>m1(basic(r))),p2=te.map(r=>m2(eng(r)));
+  aiLast={yte,pTheory,p2};
+  const res=[["이론값 그대로",mae(pTheory,yte)],["선형회귀 (기본 특징)",mae(p1,yte)],["선형회귀 (특징 공학)",mae(p2,yte)]];
+  const mx=Math.max(...res.map(r=>r[1])),mn=Math.min(...res.map(r=>r[1]));
+  $("ai-bars").innerHTML=res.map(([k,v])=>`<div class="bar ${v===mn?"best":""}"><span>${k}</span><div class="track"><div class="fill" style="width:${(v/mx*100).toFixed(1)}%"></div></div><span class="v">${v.toFixed(3)}s</span></div>`).join("")+
+    `<p class="note" style="margin:6px 0 0">특징 공학으로 오차 <b style="color:var(--accent)">${(100*(1-res[2][1]/res[0][1])).toFixed(0)}%</b> 감소 · 평가 작업 ${te.length}개</p>`;
+  drawScatter();
+}
+function drawScatter(){if(!aiLast)return;const{yte,pTheory,p2}=aiLast;const{c,w,h}=setup($("cv-scatter"));const L=44,R=12,T=12,B=34,pw=w-L-R,ph=h-T-B;
+  const all=[...yte,...pTheory,...p2];const lo=Math.floor(Math.min(...all)),hi=Math.ceil(Math.max(...all));const X=v=>L+(v-lo)/(hi-lo)*pw,Y=v=>T+ph-(v-lo)/(hi-lo)*ph;
+  c.font=MONO;c.strokeStyle=css("--line");c.fillStyle=css("--muted");const st=hi-lo>12?4:2;
+  for(let v=lo;v<=hi;v+=st){c.beginPath();c.moveTo(X(v),T);c.lineTo(X(v),T+ph);c.moveTo(L,Y(v));c.lineTo(L+pw,Y(v));c.stroke();c.textAlign="center";c.fillText(v,X(v),h-16);c.textAlign="right";c.fillText(v,L-6,Y(v)+4);}
+  c.strokeStyle=css("--ink");c.setLineDash([4,4]);c.beginPath();c.moveTo(X(lo),Y(lo));c.lineTo(X(hi),Y(hi));c.stroke();c.setLineDash([]);
+  c.globalAlpha=.45;c.fillStyle=css("--muted");yte.forEach((y,i)=>{c.beginPath();c.arc(X(y),Y(pTheory[i]),2.5,0,7);c.fill();});
+  c.globalAlpha=.85;c.fillStyle=css("--accent");yte.forEach((y,i)=>{c.beginPath();c.arc(X(y),Y(p2[i]),2.5,0,7);c.fill();});c.globalAlpha=1;
+  c.fillStyle=css("--muted");c.textAlign="right";c.fillText("실제 시간 (s) →",L+pw,h-2);c.textAlign="left";c.fillText("↑ 예측",L+6,T+10);}
+$("ai-n").addEventListener("input",()=>{$("o-n").textContent=$("ai-n").value+"개";});
+$("ai-n").addEventListener("change",runAI);
+$("ai-run").addEventListener("click",()=>{aiSeed++;runAI();});
+
+/* ---------- Lesson 3: Q-learning ---------- */
+const STATES=["가벼움 0~1kg","보통 1~2kg","무거움 2~3kg"],ACT=[30,50,70,90];
+const THEORY=ACT.map(a=>predict(WP,a).total);
+let Q,ep,curve,rlR,rlBusy=false;
+function rlReset(){Q=STATES.map(()=>ACT.map(()=>0));ep=0;curve=[];rlR=rng(11);}
+function rlStep(n){const pen=+$("rl-pen").value,eps=+$("rl-eps").value/100;for(let k=0;k<n;k++){const kg=rlR()*3,s=Math.min(Math.floor(kg),2);let a;if(rlR()<eps)a=Math.floor(rlR()*4);else{a=0;for(let i=1;i<4;i++)if(Q[s][i]>Q[s][a])a=i;}
+  const m=fakeMeasure(THEORY[a],ACT[a],kg,6,rlR);const rew=-m.t-(m.ok?0:pen);Q[s][a]+=0.05*(rew-Q[s][a]);ep++;curve.push(rew);}}
+function drawQ(){let html='<div></div>'+ACT.map(a=>`<div class="h">${a}%</div>`).join("");
+  const all=Q.flat().filter(v=>v!==0);const lo=Math.min(...all,-1),hi=Math.max(...all,0);
+  Q.forEach((row,s)=>{let b=0;row.forEach((v,i)=>{if(v>row[b])b=i;});html+=`<div class="rl">${STATES[s]}</div>`;row.forEach((v,i)=>{const t=v===0?0:(v-lo)/(hi-lo||1);html+=`<div class="cell ${ep&&i===b?"best":""}" style="background:color-mix(in srgb, var(--data) ${(8+t*42).toFixed(0)}%, var(--surface-2))">${v===0?"–":v.toFixed(2)}</div>`;});});
+  $("qgrid").innerHTML=html;$("rl-ep").textContent=ep.toLocaleString();
+  const{c,w,h}=setup($("cv-rl"));const L=40,R=10,T=10,B=22,pw=w-L-R,ph=h-T-B;const win=200,pts=[];for(let i=win;i<=curve.length;i+=50){let s=0;for(let k=i-win;k<i;k++)s+=curve[k];pts.push(s/win);}
+  c.font=MONO;c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.textAlign="left";c.fillText("평균 보상",L+4,T+8);
+  if(pts.length<2){c.textAlign="center";c.fillText("학습 버튼을 누르면 곡선이 그려집니다",L+pw/2,T+ph/2);return;}
+  const lo2=Math.min(...pts),hi2=Math.max(...pts),Y=v=>T+ph-(v-lo2)/((hi2-lo2)||1)*ph,X=i=>L+i/(Math.max(pts.length-1,1))*pw;
+  c.textAlign="right";[lo2,hi2].forEach(v=>{c.beginPath();c.moveTo(L,Y(v));c.lineTo(L+pw,Y(v));c.stroke();c.fillText(v.toFixed(1),L-4,Y(v)+4);});
+  c.textAlign="right";c.fillText(ep.toLocaleString()+"회",L+pw,h-4);
+  c.strokeStyle=css("--accent");c.lineWidth=2;c.beginPath();pts.forEach((v,i)=>i?c.lineTo(X(i),Y(v)):c.moveTo(X(i),Y(v)));c.stroke();
+  c.fillStyle=css("--accent");c.beginPath();c.arc(X(pts.length-1),Y(pts[pts.length-1]),3.5,0,7);c.fill();}
+function rlTrain(animated){rlReset();if(!animated){rlStep(6000);drawQ();return;}rlBusy=true;$("rl-run").disabled=true;
+  const tick=()=>{rlStep(150);drawQ();if(ep<6000)requestAnimationFrame(tick);else{rlBusy=false;$("rl-run").disabled=false;}};tick();}
+$("rl-pen").addEventListener("input",()=>$("o-pen").textContent="−"+$("rl-pen").value);
+$("rl-eps").addEventListener("input",()=>$("o-eps").textContent=(+$("rl-eps").value/100).toFixed(2));
+$("rl-run").addEventListener("click",()=>{if(!rlBusy)rlTrain(!matchMedia("(prefers-reduced-motion: reduce)").matches);});
+$("o-pen").textContent="−10";$("o-eps").textContent="0.20";
+
+/* ---------- Lesson 5: light drawing ---------- */
+const art=$("cv-art"),ac=art.getContext("2d");let aw=0,ah=0,last=null,hue=0,camOn=false,prevFrame=null;
+function sizeArt(){const r=art.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);aw=r.width;ah=r.height;art.width=aw*dpr;art.height=ah*dpr;ac.setTransform(dpr,0,0,dpr,0,0);ac.fillStyle="#06090c";ac.fillRect(0,0,aw,ah);}
+function stroke(p){hue=(hue+2)%360;if(last){ac.globalCompositeOperation="lighter";ac.lineCap="round";const col=`hsl(${hue} 90% 60%)`;ac.shadowColor=col;ac.shadowBlur=24;ac.strokeStyle=col;ac.lineWidth=10;ac.beginPath();ac.moveTo(last.x,last.y);ac.lineTo(p.x,p.y);ac.stroke();ac.shadowBlur=0;ac.strokeStyle="rgba(255,255,255,.85)";ac.lineWidth=3;ac.stroke();ac.globalCompositeOperation="source-over";}last=p;}
+function fadeLoop(){const f=+$("art-fade").value/100;ac.globalCompositeOperation="source-over";ac.fillStyle=`rgba(6,9,12,${(1-f).toFixed(3)})`;ac.fillRect(0,0,aw,ah);if(camOn)trackCam();requestAnimationFrame(fadeLoop);}
+const pos=e=>{const r=art.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
+let down=false;
+art.addEventListener("pointerdown",e=>{down=true;last=pos(e);art.setPointerCapture(e.pointerId);});
+art.addEventListener("pointermove",e=>{if(down||e.pointerType==="mouse")stroke(pos(e));});
+art.addEventListener("pointerup",()=>{down=false;last=null;});
+art.addEventListener("pointerleave",()=>{last=null;});
+$("art-clear").addEventListener("click",()=>{ac.fillStyle="#06090c";ac.fillRect(0,0,aw,ah);});
+$("art-fade").addEventListener("input",()=>$("o-fade").textContent=$("art-fade").value+"%");$("o-fade").textContent="96%";
+// webcam motion tracking: gray -> diff -> threshold -> centroid (mirrored)
+const small=document.createElement("canvas");small.width=80;small.height=45;const sc=small.getContext("2d",{willReadFrequently:true});
+function trackCam(){const v=$("cam");if(v.readyState<2)return;sc.drawImage(v,0,0,80,45);const d=sc.getImageData(0,0,80,45).data;const g=new Float32Array(80*45);for(let i=0;i<g.length;i++)g[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];
+  if(prevFrame){let sx=0,sy=0,n=0;for(let i=0;i<g.length;i++)if(Math.abs(g[i]-prevFrame[i])>28){sx+=i%80;sy+=Math.floor(i/80);n++;}
+    if(n>25){const p={x:(1-sx/n/80)*aw,y:sy/n/45*ah};if(last){p.x=last.x*.5+p.x*.5;p.y=last.y*.5+p.y*.5;}stroke(p);}else last=null;}
+  prevFrame=g;}
+$("art-cam").addEventListener("click",async()=>{const st=$("art-status");if(camOn){const v=$("cam");(v.srcObject?.getTracks()||[]).forEach(t=>t.stop());v.srcObject=null;camOn=false;$("art-cam").textContent="웹캠으로 그리기";st.textContent="마우스 / 터치로 그리기";return;}
+  try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("unsupported");const s=await navigator.mediaDevices.getUserMedia({video:{width:640,height:360}});const v=$("cam");v.srcObject=s;await v.play();camOn=true;prevFrame=null;$("art-cam").textContent="웹캠 끄기";st.textContent="웹캠 움직임 추적 중 · 카메라 앞에서 손을 흔드세요";}
+  catch(e){st.textContent="이 화면에서는 웹캠을 쓸 수 없어요. GitHub Pages 주소나 로컬 파일로 열어 보세요.";}});
+
+/* ---------- checklist (per-viewer) ---------- */
+document.querySelectorAll("#sec-check input").forEach(cb=>{try{cb.checked=localStorage.getItem("ral-"+cb.id)==="1";}catch(e){}cb.addEventListener("change",()=>{try{localStorage.setItem("ral-"+cb.id,cb.checked?"1":"0");}catch(e){}});});
+
+/* ---------- nav highlight ---------- */
+const links=[...document.querySelectorAll("nav.rail a")];
+if("IntersectionObserver"in window){const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id));});},{rootMargin:"-30% 0px -60% 0px"});document.querySelectorAll("main section").forEach(s=>io.observe(s));}
+
+/* ---------- boot + redraw on resize/theme ---------- */
+function redrawAll(){drawProfile();drawTask();drawScatter();drawQ();}
+sizeArt();drawProfile();drawTask();runAI();rlTrain(false);fadeLoop();
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{redrawAll();sizeArt();},120);});
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",redrawAll);
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+document.fonts?.ready.then(redrawAll);
+})();
+</script>
